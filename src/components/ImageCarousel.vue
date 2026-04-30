@@ -14,6 +14,16 @@ const visibleCount = ref(1);
 const currentIndex = ref(0);
 
 const isMobile = ref(false);
+const viewportRef = ref(null);
+
+const SWIPE_THRESHOLD = 50;
+const DRAG_CLICK_THRESHOLD = 8;
+
+const isPointerDown = ref(false);
+const startX = ref(0);
+const currentX = ref(0);
+const didDrag = ref(false);
+const suppressClick = ref(false);
 
 const updateVisibleCount = () => {
   isMobile.value = window.innerWidth <= 768
@@ -46,6 +56,51 @@ const prev = () => {
     (currentIndex.value - 1 + props.images.length) % props.images.length;
 };
 
+const onPointerDown = (event) => {
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+
+  isPointerDown.value = true;
+  startX.value = event.clientX;
+  currentX.value = event.clientX;
+  didDrag.value = false;
+
+  if (viewportRef.value) {
+    viewportRef.value.setPointerCapture?.(event.pointerId);
+  }
+};
+
+const onPointerMove = (event) => {
+  if (!isPointerDown.value) return;
+
+  currentX.value = event.clientX;
+  if (Math.abs(currentX.value - startX.value) > DRAG_CLICK_THRESHOLD) {
+    didDrag.value = true;
+  }
+};
+
+const onPointerEnd = () => {
+  if (!isPointerDown.value) return;
+
+  const deltaX = currentX.value - startX.value;
+
+  if (Math.abs(deltaX) >= SWIPE_THRESHOLD) {
+    if (deltaX < 0) {
+      next();
+    } else {
+      prev();
+    }
+  }
+
+  if (didDrag.value) {
+    suppressClick.value = true;
+    window.setTimeout(() => {
+      suppressClick.value = false;
+    }, 0);
+  }
+
+  isPointerDown.value = false;
+};
+
 
 const visibleImages = computed(() => {
   if (!props.images.length) return [];
@@ -62,6 +117,8 @@ const visibleImages = computed(() => {
 const selectedImages = ref(new Set());
 
 const toggleSelect = (image) => {
+  if (suppressClick.value) return;
+
   if (selectedImages.value.has(image.download_url)) {
     selectedImages.value.delete(image.download_url);
   } else {
@@ -79,14 +136,22 @@ const isSelected = (image) => {
   <div class="carousel-wrapper">
     <div class="carousel">
       <button
-        v-if="!isMobile"
         class="carousel__btn carousel__btn--prev"
         @click="prev"
       >
        <span>‹</span> 
       </button>
 
-      <div class="carousel__viewport">
+      <div
+        ref="viewportRef"
+        class="carousel__viewport"
+        :class="{ 'carousel__viewport--dragging': isPointerDown }"
+        @pointerdown="onPointerDown"
+        @pointermove="onPointerMove"
+        @pointerup="onPointerEnd"
+        @pointercancel="onPointerEnd"
+        @pointerleave="onPointerEnd"
+      >
         <TransitionGroup name="slide" tag="div" class="carousel__track">
           <div
             v-for="image in visibleImages"
@@ -104,7 +169,6 @@ const isSelected = (image) => {
       </div>
 
       <button
-        v-if="!isMobile"
         class="carousel__btn carousel__btn--next"
         @click="next"
       >
@@ -141,6 +205,11 @@ const isSelected = (image) => {
   flex: 1;
   overflow: hidden;
   min-width: 0;
+  touch-action: pan-y;
+}
+
+.carousel__viewport--dragging {
+  cursor: grabbing;
 }
 
 .carousel__track {
