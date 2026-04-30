@@ -63,7 +63,8 @@ const onPointerDown = (event) => {
   currentX.value = event.clientX;
   didDrag.value = false;
 
-  if (viewportRef.value) {
+  // Pointer capture is needed for touch drags, but on desktop mouse it may steal click from the card.
+  if (viewportRef.value && event.pointerType !== "mouse") {
     viewportRef.value.setPointerCapture?.(event.pointerId);
   }
 };
@@ -77,12 +78,13 @@ const onPointerMove = (event) => {
   }
 };
 
-const onPointerEnd = () => {
+const onPointerEnd = (event) => {
   if (!isPointerDown.value) return;
 
   const deltaX = currentX.value - startX.value;
+  const isSwipe = Math.abs(deltaX) >= SWIPE_THRESHOLD;
 
-  if (Math.abs(deltaX) >= SWIPE_THRESHOLD) {
+  if (isSwipe) {
     if (deltaX < 0) {
       next();
     } else {
@@ -90,11 +92,16 @@ const onPointerEnd = () => {
     }
   }
 
-  if (didDrag.value) {
+  // Suppress click only after a real swipe, not after small cursor movement.
+  if (isSwipe) {
     suppressClick.value = true;
     window.setTimeout(() => {
       suppressClick.value = false;
     }, 0);
+  }
+
+  if (viewportRef.value && event.pointerType !== "mouse") {
+    viewportRef.value.releasePointerCapture?.(event.pointerId);
   }
 
   isPointerDown.value = false;
@@ -212,6 +219,7 @@ const isSelected = (image) => {
 
 .carousel__item {
   flex: 0 0 196px;
+  box-sizing: border-box;
   cursor: pointer;
   border-radius: 12px;
   overflow: hidden;
@@ -336,6 +344,11 @@ const isSelected = (image) => {
 @media (max-width: 768px) {
   .carousel__item {
     flex: 0 0 100%;
+  }
+
+  .carousel__item img {
+    object-fit: contain;
+    background-color: #111318;
   }
 }
 </style>
