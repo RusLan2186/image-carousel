@@ -26,7 +26,7 @@ const didDrag = ref(false);
 const suppressClick = ref(false);
 
 const updateVisibleCount = () => {
-  isMobile.value = window.innerWidth <= 768
+  isMobile.value = window.innerWidth <= 768;
   const viewport = document.querySelector(".carousel__viewport");
   if (viewport) {
     visibleCount.value = isMobile.value
@@ -43,7 +43,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("resize", updateVisibleCount);
 });
-
 
 const next = () => {
   if (!props.images.length) return;
@@ -101,7 +100,6 @@ const onPointerEnd = () => {
   isPointerDown.value = false;
 };
 
-
 const visibleImages = computed(() => {
   if (!props.images.length) return [];
 
@@ -112,7 +110,6 @@ const visibleImages = computed(() => {
   }
   return result;
 });
-
 
 const selectedImages = ref(new Set());
 
@@ -135,11 +132,8 @@ const isSelected = (image) => {
 <template>
   <div class="carousel-wrapper">
     <div class="carousel">
-      <button
-        class="carousel__btn carousel__btn--prev"
-        @click="prev"
-      >
-       <span>‹</span> 
+      <button class="carousel__btn carousel__btn--prev" @click="prev">
+        <span>‹</span>
       </button>
 
       <div
@@ -168,10 +162,7 @@ const isSelected = (image) => {
         </TransitionGroup>
       </div>
 
-      <button
-        class="carousel__btn carousel__btn--next"
-        @click="next"
-      >
+      <button class="carousel__btn carousel__btn--next" @click="next">
         <span>›</span>
       </button>
     </div>
@@ -265,10 +256,9 @@ const isSelected = (image) => {
     transform 0.2s;
 }
 
-.carousel__btn span{
+.carousel__btn span {
   position: relative;
   top: -2px;
-
 }
 
 .carousel__btn:hover {
@@ -280,7 +270,6 @@ const isSelected = (image) => {
 .carousel__btn:active {
   transform: scale(0.95);
 }
-
 
 .selected-list {
   margin-top: 10px;
@@ -343,7 +332,6 @@ const isSelected = (image) => {
 .slide-leave-active {
   position: absolute;
 }
-
 
 @media (max-width: 768px) {
   .carousel__item {
